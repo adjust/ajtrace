@@ -1,5 +1,4 @@
 import logging
-import socket
 import time
 
 from bcc import BPF
@@ -50,14 +49,9 @@ class EbpfCounters:
 
         return prog
 
-    def run(self, controller):
+    def run(self, storage, controller):
         prog = self.create_program()
         funcs = self.module_config.get("funcs")
-        host = config.get("graphite_host")
-        port = config.get("graphite_port")
-
-        sock = socket.socket()
-        sock.connect((host, port))
 
         # Compile and load eBPF program to kernel
         b = BPF(text=prog)
@@ -75,7 +69,7 @@ class EbpfCounters:
                         v.value,
                         int(time.time()))
                 logging.debug(msg)
-                sock.sendall(msg.encode())
+                storage.send(msg)
 
             count.clear()
             time.sleep(1)

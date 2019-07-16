@@ -1,5 +1,4 @@
 import logging
-import socket
 import time
 
 from bcc import BPF
@@ -83,16 +82,11 @@ class EbpfLatency:
 
         return prog
 
-    def run(self, controller):
+    def run(self, storage, controller):
         prog = self.create_program()
         probe_start = self.module_config['probe_start']
         probe_end = self.module_config.get('probe_end')
-        host = config.get("graphite_host")
-        port = config.get("graphite_port")
 
-        # TODO: extract to a separate object
-        sock = socket.socket()
-        sock.connect((host, port))
 
         # Compile and load eBPF program to kernel
         bpf = BPF(text=prog)
@@ -115,7 +109,7 @@ class EbpfLatency:
                             v.value,
                             int(time.time()))
                     logging.debug(msg)
-                    sock.sendall(msg.encode())
+                    storage.send(msg)
 
             stats.clear()
             time.sleep(1)
