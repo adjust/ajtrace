@@ -4,7 +4,7 @@ import time
 
 from bcc import BPF
 from random import randint
-from settings import config, modules
+from settings import config
 
 
 class EbpfCounters:
