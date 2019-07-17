@@ -1,0 +1,8 @@
+graphite_host: localhost
+graphite_port: 2003
+executable: c
+modules:
+    - type: counters
+      funcs:
+        - malloc
+        - strlen

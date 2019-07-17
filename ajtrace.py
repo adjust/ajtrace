@@ -6,8 +6,8 @@ import threading
 import time
 
 from ebpf_modules import ebpf_modules, Controller
-from settings import modules, config
-from graphite import GraphiteStorage
+from settings import GlobalConfig
+from graphite import GraphiteBackend
 
 
 controller = Controller()
@@ -17,10 +17,12 @@ def signal_handler(signum, frame):
     controller.stopped = True
 
 
-host = config.get('graphite_host', 'localhost')
-port = config.get('graphite_port', 2003)
+GlobalConfig.initialize('config.yml')
 
-for m in modules:
+host = GlobalConfig.get('graphite_host', 'localhost')
+port = GlobalConfig.get('graphite_port', 2003)
+
+for m in GlobalConfig.get('modules'):
     threads = []
     logging.basicConfig(level=logging.DEBUG)
 
@@ -29,7 +31,7 @@ for m in modules:
         logging.info('starting \'%s\' module' % m['type'])
 
         # create a dedicated connection for each module
-        storage = GraphiteStorage(host, port)
+        storage = GraphiteBackend(host, port)
         storage.connect()
 
         thread = threading.Thread(target=c.run, args=(storage, controller, ))

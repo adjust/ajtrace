@@ -3,7 +3,7 @@ import time
 
 from bcc import BPF
 import ctypes as ct
-from settings import config
+from settings import GlobalConfig as config
 
 
 units_map = {
@@ -109,7 +109,7 @@ class EbpfLatency:
                             v.value,
                             int(time.time()))
                     logging.debug(msg)
-                    storage.send(msg)
+                    storage.store(msg)
 
             stats.clear()
             time.sleep(1)

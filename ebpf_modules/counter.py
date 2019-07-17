@@ -3,7 +3,7 @@ import time
 
 from bcc import BPF
 from random import randint
-from settings import config
+from settings import GlobalConfig as config
 
 
 class EbpfCounters:
@@ -64,12 +64,14 @@ class EbpfCounters:
             count = b.get_table("count")
 
             for k, v in count.iteritems():
-                msg = 'postgres.{} {} {}\n'.format(
+                # TODO: move message formatting to the backend level
+                # TODO: define prefix in config file
+                msg = 'ajtrace.{} {} {}\n'.format(
                         funcs[k.value],
                         v.value,
                         int(time.time()))
                 logging.debug(msg)
-                storage.send(msg)
+                storage.store(msg)
 
             count.clear()
             time.sleep(1)
