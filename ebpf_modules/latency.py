@@ -87,7 +87,6 @@ class EbpfLatency:
         probe_start = self.module_config['probe_start']
         probe_end = self.module_config.get('probe_end')
 
-
         # Compile and load eBPF program to kernel
         bpf = BPF(text=prog)
         path = config.get("executable")
@@ -100,16 +99,12 @@ class EbpfLatency:
 
         while (True):
             stats = bpf.get_table("stats")
+            ts = time.time()
 
             for k, v in stats.iteritems():
                 if v.value:
-                    msg = 'test.{}.{} {} {}\n'.format(
-                            probe_start,
-                            pow(2, k.value),  # since histogram is logarithmic
-                            v.value,
-                            int(time.time()))
-                    logging.debug(msg)
-                    storage.store(msg)
+                    metric = '%s.%s' % (probe_start, pow(2, k.value))
+                    storage.store(metric, v.value, ts)
 
             stats.clear()
             time.sleep(1)

@@ -1,4 +1,8 @@
+import logging
 import socket
+import time
+
+from settings import GlobalConfig
 
 
 class GraphiteBackend:
@@ -10,6 +14,15 @@ class GraphiteBackend:
         self.sock = socket.socket()
         self.sock.connect((self.host, self.port))
 
-    def store(self, message):
-        self.sock.sendall(message.encode())
+    def store(self, metric, value, timestamp=None):
+        prefix = GlobalConfig.get('prefix', 'ajtest')
+
+        msg = '{}.{} {} {}\n'.format(
+                prefix,
+                metric,
+                value,
+                timestamp if timestamp else int(time.time()))
+
+        self.sock.sendall(msg.encode())
+        logging.debug(msg)
 

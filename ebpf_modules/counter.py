@@ -62,16 +62,10 @@ class EbpfCounters:
 
         while (True):
             count = b.get_table("count")
+            ts = time.time()
 
             for k, v in count.iteritems():
-                # TODO: move message formatting to the backend level
-                # TODO: define prefix in config file
-                msg = 'ajtrace.{} {} {}\n'.format(
-                        funcs[k.value],
-                        v.value,
-                        int(time.time()))
-                logging.debug(msg)
-                storage.store(msg)
+                storage.store(funcs[k.value], v.value, ts)
 
             count.clear()
             time.sleep(1)
