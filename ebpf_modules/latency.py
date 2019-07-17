@@ -105,7 +105,7 @@ class EbpfLatency:
                 if v.value:
                     msg = 'test.{}.{} {} {}\n'.format(
                             probe_start,
-                            k.value,
+                            pow(2, k.value),  # since histogram is logarithmic
                             v.value,
                             int(time.time()))
                     logging.debug(msg)
