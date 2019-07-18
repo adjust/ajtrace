@@ -1,6 +1,8 @@
 graphite_host: localhost
 graphite_port: 2003
 executable: c
+prefix: libc
+log_level: info
 modules:
     - type: counters
       funcs:

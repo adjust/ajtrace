@@ -7,7 +7,7 @@ import threading
 import time
 
 from ebpf_modules import ebpf_modules, Controller
-from settings import GlobalConfig
+from settings import GlobalConfig as config
 from graphite import GraphiteBackend
 
 
@@ -17,16 +17,32 @@ def signal_handler(signum, frame):
     """ Send a message to all ebpf modules to stop """
     controller.stopped = True
 
+def setup_logging():
+    log_level = config.get('log_level', 'info')
+    log_file = config.get('log_file')
 
-def main(config):
-    GlobalConfig.initialize(config)
+    level = {
+        'debug': logging.DEBUG,
+        'info': logging.INFO,
+        'warning': logging.WARNING,
+        'error': logging.ERROR,
+        'critical': logging.CRITICAL
+    }.get(log_level.lower())
 
-    host = GlobalConfig.get('graphite_host', 'localhost')
-    port = GlobalConfig.get('graphite_port', 2003)
+    if not level:
+        raise 'Unknow log level \'%s\'' % log_level.lower()
 
-    for m in GlobalConfig.get('modules'):
+    logging.basicConfig(filename=log_file, level=level)
+
+def main(config_file):
+    config.initialize(config_file)
+    setup_logging()
+
+    host = config.get('graphite_host', 'localhost')
+    port = config.get('graphite_port', 2003)
+
+    for m in config.get('modules'):
         threads = []
-        logging.basicConfig(level=logging.DEBUG)
 
         if m.get('type') in ebpf_modules:
             c = ebpf_modules[m['type']](m)
