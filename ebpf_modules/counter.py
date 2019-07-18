@@ -53,23 +53,28 @@ class EbpfCounters:
         prog = self.create_program()
         funcs = self.module_config.get("funcs")
 
-        # Compile and load eBPF program to kernel
-        b = BPF(text=prog)
-        for f in funcs:
-            b.attach_uprobe(name=config.get("executable"),
-                            sym=f,
-                            fn_name="%s_on_enter" % f)
+        try:
+            # Compile and load eBPF program to kernel
+            b = BPF(text=prog)
+            for f in funcs:
+                b.attach_uprobe(name=config.get("executable"),
+                                sym=f,
+                                fn_name="%s_on_enter" % f)
 
-        while (True):
-            count = b.get_table("count")
-            ts = time.time()
+            while (True):
+                count = b.get_table("count")
+                ts = time.time()
 
-            for k, v in count.iteritems():
-                storage.store(funcs[k.value], v.value, ts)
+                for k, v in count.iteritems():
+                    storage.store(funcs[k.value], v.value, ts)
 
-            count.clear()
-            time.sleep(1)
+                count.clear()
+                time.sleep(1)
 
-            if controller.stopped:
-                break
+                if controller.stopped:
+                    break
+        except Exception as e:
+            # stop all other threads
+            controller.stopped = True
+            raise e
 

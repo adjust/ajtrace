@@ -34,6 +34,10 @@ class EbpfLatency:
             raise 'Expected integer as buckets number, but got %s' % type(buckets)
         self.options['BUCKETS'] = buckets
 
+        # check that probe_start is set
+        if 'probe_start' not in module_config:
+            raise '\'probe_start\' is not specified'
+
     def create_program(self):
         prog = """
             #include <uapi/linux/ptrace.h>
@@ -87,28 +91,33 @@ class EbpfLatency:
         probe_start = self.module_config['probe_start']
         probe_end = self.module_config.get('probe_end')
 
-        # Compile and load eBPF program to kernel
-        bpf = BPF(text=prog)
-        path = config.get("executable")
+        try:
+            # Compile and load eBPF program to kernel
+            bpf = BPF(text=prog)
+            path = config.get("executable")
 
-        bpf.attach_uprobe(name=path, sym=probe_start, fn_name='probe_start');
-        if probe_start == probe_end or not probe_end:
-            bpf.attach_uretprobe(name=path, sym=probe_start, fn_name='probe_end');
-        else:
-            bpf.attach_uprobe(name=path, sym=probe_end, fn_name='probe_end');
+            bpf.attach_uprobe(name=path, sym=probe_start, fn_name='probe_start');
+            if probe_start == probe_end or not probe_end:
+                bpf.attach_uretprobe(name=path, sym=probe_start, fn_name='probe_end');
+            else:
+                bpf.attach_uprobe(name=path, sym=probe_end, fn_name='probe_end');
 
-        while (True):
-            stats = bpf.get_table("stats")
-            ts = time.time()
+            while (True):
+                stats = bpf.get_table("stats")
+                ts = time.time()
 
-            for k, v in stats.iteritems():
-                if v.value:
-                    metric = '%s.%s' % (probe_start, pow(2, k.value))
-                    storage.store(metric, v.value, ts)
+                for k, v in stats.iteritems():
+                    if v.value:
+                        metric = '%s.%s' % (probe_start, pow(2, k.value))
+                        storage.store(metric, v.value, ts)
 
-            stats.clear()
-            time.sleep(1)
+                stats.clear()
+                time.sleep(1)
 
-            if controller.stopped:
-                break
+                if controller.stopped:
+                    break
+        except Exception as e:
+            # stop all other threads
+            controller.stopped = True
+            raise e
 
