@@ -7,15 +7,17 @@ import threading
 import time
 
 from ebpf_modules import ebpf_modules, Controller
-from settings import GlobalConfig as config
 from graphite import GraphiteBackend
+from settings import GlobalConfig as config
 
 
 controller = Controller()
 
+
 def signal_handler(signum, frame):
     """ Send a message to all ebpf modules to stop """
     controller.stopped = True
+
 
 def setup_logging():
     log_level = config.get('log_level', 'info')
@@ -30,12 +32,17 @@ def setup_logging():
     }.get(log_level.lower())
 
     if not level:
-        raise 'Unknow log level \'%s\'' % log_level.lower()
+        raise 'Unknown log level \'%s\'' % log_level.lower()
 
     logging.basicConfig(filename=log_file, level=level)
 
-def main(config_file):
-    config.initialize(config_file)
+
+def main():
+    parser = argparse.ArgumentParser(description='ajtrace - eBPF base monitoring tool')
+    parser.add_argument('-c', '--config', default='config.yml', help='config file')
+    args = parser.parse_args()
+
+    config.initialize(args.config)
     setup_logging()
 
     host = config.get('graphite_host', 'localhost')
@@ -79,8 +86,6 @@ def main(config_file):
     logging.info('done')
 
 
-parser = argparse.ArgumentParser(description='ajtrace - eBPF base monitoring tool')
-parser.add_argument('-c', '--config', default='config.yml', help='config file')
-args = parser.parse_args()
+if __name__ == '__main__':
+    main()
 
-main(args.config)
